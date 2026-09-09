@@ -1,0 +1,1077 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#071923">
+  <meta name="description" content="QRキャッチで見つける、先生のための小さなおみくじ。">
+  <title>QRの向こうの職員室</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --navy-950: #041018;
+      --navy-900: #071923;
+      --navy-800: #0c2631;
+      --cyan: #64e3d1;
+      --cyan-soft: #baf8ef;
+      --amber: #ffc760;
+      --paper: #fffaf0;
+      --ink: #14323a;
+      --coral: #e66d58;
+      --teal: #176c6a;
+      --muted: #94adb5;
+      --shadow: 0 24px 80px rgb(1 16 23 / 38%);
+      font-family: "Yu Gothic UI", "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      min-height: 100%;
+      margin: 0;
+    }
+
+    body {
+      min-height: 100svh;
+      overflow-x: hidden;
+      background: var(--navy-950);
+      color: #eefcff;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .app {
+      position: relative;
+      min-height: 100svh;
+      isolation: isolate;
+    }
+
+    .app::before {
+      position: fixed;
+      inset: 0;
+      z-index: -3;
+      content: "";
+      background:
+        radial-gradient(circle at 20% 10%, rgb(49 196 185 / 12%), transparent 33rem),
+        linear-gradient(145deg, var(--navy-950), var(--navy-900) 52%, #0b222a);
+    }
+
+    .app::after {
+      position: fixed;
+      inset: 0;
+      z-index: -2;
+      pointer-events: none;
+      content: "";
+      opacity: .18;
+      background-image:
+        linear-gradient(rgb(126 226 215 / 9%) 1px, transparent 1px),
+        linear-gradient(90deg, rgb(126 226 215 / 9%) 1px, transparent 1px);
+      background-size: 42px 42px;
+      mask-image: linear-gradient(to bottom, black, transparent 78%);
+    }
+
+    .screen {
+      min-height: 100svh;
+    }
+
+    .system-screen {
+      display: grid;
+      place-items: center;
+      padding: clamp(1rem, 4vw, 3rem);
+      transition: opacity .7s ease, transform .7s ease, filter .7s ease;
+    }
+
+    .system-panel {
+      width: min(780px, 100%);
+      overflow: hidden;
+      border: 1px solid rgb(100 227 209 / 34%);
+      border-radius: 24px;
+      background: linear-gradient(155deg, rgb(10 38 50 / 94%), rgb(4 20 29 / 96%));
+      box-shadow: var(--shadow), inset 0 1px rgb(255 255 255 / 5%);
+    }
+
+    .system-topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      min-height: 54px;
+      padding: .85rem clamp(1rem, 3vw, 1.6rem);
+      border-bottom: 1px solid rgb(100 227 209 / 18%);
+      color: var(--muted);
+      font-size: .875rem;
+      letter-spacing: .08em;
+    }
+
+    .signal {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+    }
+
+    .signal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 18px var(--cyan);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    .system-body {
+      padding: clamp(1.4rem, 5vw, 3.5rem);
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.25rem;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 58px;
+      height: 58px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid rgb(100 227 209 / 42%);
+      border-radius: 16px;
+      background: rgb(100 227 209 / 9%);
+      color: var(--cyan-soft);
+      font-weight: 800;
+      letter-spacing: -.05em;
+    }
+
+    .brand-name {
+      margin: 0;
+      font-size: clamp(1.65rem, 4vw, 2.4rem);
+      line-height: 1.15;
+      letter-spacing: .02em;
+    }
+
+    .brand-credit {
+      margin: .35rem 0 0;
+      color: var(--muted);
+      font-size: .875rem;
+      letter-spacing: .08em;
+    }
+
+    .success-message {
+      margin-bottom: 1.5rem;
+    }
+
+    .success-label {
+      display: inline-flex;
+      align-items: center;
+      gap: .55rem;
+      margin: 0 0 .65rem;
+      color: var(--cyan-soft);
+      font-weight: 700;
+    }
+
+    .success-label::before {
+      display: grid;
+      width: 1.55rem;
+      height: 1.55rem;
+      place-items: center;
+      border-radius: 50%;
+      content: "✓";
+      background: var(--cyan);
+      color: var(--navy-950);
+      font-size: .9rem;
+    }
+
+    .success-message h2 {
+      margin: 0;
+      font-size: clamp(1.45rem, 4vw, 2.2rem);
+      line-height: 1.45;
+    }
+
+    .check-list {
+      display: grid;
+      gap: .7rem;
+      margin: 0 0 1.8rem;
+      padding: 0;
+      list-style: none;
+    }
+
+    .check-item {
+      display: grid;
+      grid-template-columns: 1.35rem 1fr auto;
+      align-items: center;
+      gap: .8rem;
+      min-height: 46px;
+      padding: .65rem .85rem;
+      border: 1px solid rgb(132 188 196 / 13%);
+      border-radius: 12px;
+      background: rgb(255 255 255 / 2%);
+      color: #c8d9de;
+    }
+
+    .check-icon {
+      display: grid;
+      width: 1.25rem;
+      height: 1.25rem;
+      place-items: center;
+      border: 1px solid #557079;
+      border-radius: 50%;
+      color: transparent;
+      font-size: .72rem;
+      transition: all .25s ease;
+    }
+
+    .check-state {
+      color: #78929a;
+      font-size: .875rem;
+    }
+
+    .check-item.active {
+      border-color: rgb(255 199 96 / 28%);
+      background: rgb(255 199 96 / 5%);
+    }
+
+    .check-item.active .check-icon {
+      border-color: var(--amber);
+      box-shadow: 0 0 16px rgb(255 199 96 / 38%);
+      animation: pulse 1s ease-in-out infinite;
+    }
+
+    .check-item.active .check-state {
+      color: var(--amber);
+    }
+
+    .check-item.done .check-icon {
+      border-color: var(--cyan);
+      background: var(--cyan);
+      color: var(--navy-950);
+    }
+
+    .check-item.done .check-state {
+      color: var(--cyan-soft);
+    }
+
+    .check-item.strange {
+      border-color: rgb(255 199 96 / 45%);
+    }
+
+    .check-item.strange .check-icon {
+      border-color: var(--amber);
+      color: var(--amber);
+    }
+
+    .check-item.strange .check-state {
+      color: var(--amber);
+    }
+
+    .progress-track {
+      height: 7px;
+      margin: 0 0 1.5rem;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgb(255 255 255 / 7%);
+    }
+
+    .progress-bar {
+      width: 0;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, var(--cyan), var(--amber));
+      box-shadow: 0 0 18px rgb(100 227 209 / 40%);
+      transition: width .8s ease;
+    }
+
+    .primary-button,
+    .secondary-button {
+      min-height: 52px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+
+    .primary-button {
+      width: 100%;
+      border: 0;
+      background: var(--cyan);
+      color: var(--navy-950);
+      box-shadow: 0 12px 30px rgb(100 227 209 / 18%);
+    }
+
+    .primary-button:hover,
+    .secondary-button:hover {
+      transform: translateY(-2px);
+    }
+
+    .primary-button:focus-visible,
+    .secondary-button:focus-visible,
+    .skip-button:focus-visible {
+      outline: 3px solid var(--amber);
+      outline-offset: 4px;
+    }
+
+    .primary-button:disabled {
+      cursor: wait;
+      opacity: .7;
+      transform: none;
+    }
+
+    .system-note {
+      min-height: 1.6em;
+      margin: 1rem 0 0;
+      color: var(--muted);
+      font-size: .9rem;
+      text-align: center;
+    }
+
+    .portal-message {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: grid;
+      place-items: center;
+      padding: 2rem;
+      pointer-events: none;
+      opacity: 0;
+      background: #fff1d6;
+      color: var(--ink);
+      clip-path: circle(0 at 50% 50%);
+      transition: clip-path 1s cubic-bezier(.65, 0, .2, 1), opacity .2s ease;
+    }
+
+    .portal-message p {
+      margin: 0;
+      font-size: clamp(1.35rem, 4vw, 2.5rem);
+      font-weight: 800;
+      line-height: 1.65;
+      text-align: center;
+    }
+
+    .app.portal-opening .system-screen {
+      filter: blur(7px);
+      opacity: 0;
+      transform: scale(.98);
+    }
+
+    .app.portal-opening .portal-message {
+      opacity: 1;
+      clip-path: circle(80vmax at 50% 50%);
+    }
+
+    .staff-screen {
+      position: fixed;
+      inset: 0;
+      z-index: 30;
+      display: grid;
+      align-items: end;
+      min-height: 100svh;
+      overflow: hidden;
+      visibility: hidden;
+      opacity: 0;
+      background: #5a392a;
+      transition: opacity .8s ease, visibility 0s linear .8s;
+    }
+
+    .app.staff-mode .staff-screen {
+      visibility: visible;
+      opacity: 1;
+      transition-delay: 0s;
+    }
+
+    .staff-photo {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      transform: scale(1.05);
+      filter: saturate(.92) contrast(.97);
+      transition: transform 14s ease-out, filter 1s ease;
+    }
+
+    .app.staff-mode .staff-photo {
+      transform: scale(1);
+    }
+
+    .staff-shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgb(4 20 26 / 84%) 0%, rgb(4 20 26 / 58%) 40%, rgb(4 20 26 / 8%) 70%),
+        linear-gradient(0deg, rgb(4 20 26 / 72%) 0%, transparent 56%);
+    }
+
+    .staff-content {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      align-items: end;
+      width: min(1180px, calc(100% - 2rem));
+      min-height: 100svh;
+      margin: 0 auto;
+      padding: clamp(1rem, 4vw, 3rem) 0;
+    }
+
+    .fortune-panel {
+      width: min(580px, 100%);
+      padding: clamp(1.3rem, 4vw, 2.4rem);
+      border: 1px solid rgb(255 255 255 / 22%);
+      border-radius: 28px;
+      background: rgb(5 28 33 / 82%);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+    }
+
+    .staff-brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 1.3rem;
+      color: #d7edec;
+      font-size: .875rem;
+    }
+
+    .staff-brand strong {
+      color: #fff;
+      font-size: 1rem;
+    }
+
+    .eyebrow {
+      margin: 0 0 .55rem;
+      color: var(--amber);
+      font-weight: 800;
+      letter-spacing: .08em;
+    }
+
+    .staff-title {
+      margin: 0;
+      color: #fff;
+      font-size: clamp(2rem, 6vw, 4rem);
+      line-height: 1.2;
+      letter-spacing: .02em;
+    }
+
+    .draw-area {
+      display: grid;
+      grid-template-rows: 1fr;
+      margin-top: 1.4rem;
+    }
+
+    .draw-status,
+    .fortune-result {
+      grid-area: 1 / 1;
+      min-height: 240px;
+      border-radius: 20px;
+    }
+
+    .draw-status {
+      display: grid;
+      align-content: center;
+      gap: 1rem;
+      padding: 1.4rem;
+      border: 1px solid rgb(255 255 255 / 13%);
+      background: rgb(255 255 255 / 7%);
+      opacity: 1;
+      transition: opacity .5s ease, transform .5s ease;
+    }
+
+    .draw-status.is-hidden {
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+
+    .draw-label {
+      margin: 0;
+      color: #f3fbfb;
+      font-size: clamp(1.1rem, 3vw, 1.35rem);
+      font-weight: 700;
+      line-height: 1.7;
+    }
+
+    .shuffle-track {
+      position: relative;
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: rgb(255 255 255 / 10%);
+    }
+
+    .shuffle-track::after {
+      position: absolute;
+      inset: 0 auto 0 -35%;
+      width: 34%;
+      border-radius: inherit;
+      content: "";
+      background: linear-gradient(90deg, var(--coral), var(--amber));
+      animation: shuffle 1.15s ease-in-out infinite;
+    }
+
+    .fortune-result {
+      display: grid;
+      align-content: center;
+      padding: clamp(1.25rem, 4vw, 2rem);
+      background: var(--paper);
+      color: var(--ink);
+      opacity: 0;
+      transform: rotateX(88deg) translateY(18px);
+      transform-origin: center bottom;
+      transition: opacity .7s ease, transform .8s cubic-bezier(.2, .8, .2, 1);
+    }
+
+    .fortune-result.is-visible {
+      opacity: 1;
+      transform: rotateX(0) translateY(0);
+    }
+
+    .fortune-kicker {
+      margin: 0 0 .4rem;
+      color: var(--teal);
+      font-size: .9rem;
+      font-weight: 800;
+      letter-spacing: .1em;
+    }
+
+    .fortune-title {
+      margin: 0 0 .8rem;
+      color: #a43f31;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      line-height: 1.1;
+    }
+
+    .fortune-copy {
+      margin: 0;
+      font-size: clamp(1.05rem, 2.6vw, 1.25rem);
+      font-weight: 700;
+      line-height: 1.75;
+    }
+
+    .lucky-item {
+      margin: .9rem 0 0;
+      padding-top: .85rem;
+      border-top: 1px dashed rgb(20 50 58 / 24%);
+      color: #3c5d63;
+      font-size: .95rem;
+      line-height: 1.6;
+    }
+
+    .motto {
+      margin: 1.25rem 0 0;
+      color: #fff7dc;
+      font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+      font-size: clamp(1.25rem, 4vw, 2.05rem);
+      font-weight: 700;
+      letter-spacing: .14em;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 1s ease, transform 1s ease;
+    }
+
+    .motto.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .actions {
+      display: flex;
+      justify-content: center;
+      margin-top: 1.1rem;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .6s ease, transform .6s ease;
+    }
+
+    .actions.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .secondary-button {
+      min-width: 190px;
+      padding: .75rem 1.3rem;
+      border: 1px solid rgb(255 255 255 / 34%);
+      background: rgb(4 24 29 / 68%);
+      color: #fff;
+      box-shadow: 0 12px 28px rgb(3 14 18 / 18%);
+    }
+
+    .skip-button {
+      position: fixed;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 60;
+      padding: .55rem .85rem;
+      border: 1px solid rgb(255 255 255 / 20%);
+      border-radius: 999px;
+      background: rgb(4 16 24 / 55%);
+      color: rgb(255 255 255 / 76%);
+      cursor: pointer;
+      font-size: .875rem;
+      opacity: 0;
+      pointer-events: none;
+      backdrop-filter: blur(10px);
+      transition: opacity .3s ease;
+    }
+
+    .skip-button.is-visible {
+      pointer-events: auto;
+      opacity: 1;
+    }
+
+    .app.staff-mode .skip-button {
+      color: #fff;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: .62; transform: scale(.88); }
+      50% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes shuffle {
+      0% { left: 0; transform: translateX(0); }
+      50% { left: 100%; transform: translateX(-100%); }
+      100% { left: 0; transform: translateX(0); }
+    }
+
+    @media (max-width: 760px) {
+      .system-topbar span:last-child {
+        display: none;
+      }
+
+      .staff-screen {
+        align-items: stretch;
+      }
+
+      .staff-photo {
+        height: 52%;
+        object-position: 52% center;
+      }
+
+      .staff-shade {
+        background:
+          linear-gradient(0deg, rgb(4 20 26 / 96%) 0%, rgb(4 20 26 / 88%) 50%, rgb(4 20 26 / 8%) 76%);
+      }
+
+      .staff-content {
+        align-items: end;
+        padding-bottom: 4.2rem;
+      }
+
+      .fortune-panel {
+        border-radius: 24px;
+        background: rgb(5 28 33 / 90%);
+      }
+
+      .draw-status,
+      .fortune-result {
+        min-height: 220px;
+      }
+
+      .staff-title {
+        font-size: clamp(1.9rem, 9vw, 3rem);
+      }
+
+      .motto {
+        letter-spacing: .08em;
+      }
+    }
+
+    @media (max-width: 460px) {
+      .system-body {
+        padding: 1.2rem;
+      }
+
+      .brand-row {
+        margin-bottom: 1.5rem;
+      }
+
+      .check-item {
+        grid-template-columns: 1.2rem 1fr;
+      }
+
+      .check-state {
+        grid-column: 2;
+      }
+
+      .staff-brand {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: .15rem;
+      }
+
+      .fortune-panel {
+        padding: 1.15rem;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app" id="app">
+    <section class="screen system-screen" aria-labelledby="appName">
+      <div class="system-panel">
+        <div class="system-topbar">
+          <span class="signal"><span class="signal-dot" aria-hidden="true"></span>QR READER ONLINE</span>
+          <span>RESULT VIEWER / HM-01</span>
+        </div>
+
+        <div class="system-body">
+          <div class="brand-row">
+            <div class="brand-mark" aria-hidden="true">QR</div>
+            <div>
+              <h1 class="brand-name" id="appName">QRキャッチ</h1>
+              <p class="brand-credit">presented By H.M Works</p>
+            </div>
+          </div>
+
+          <div class="success-message">
+            <p class="success-label">読み取り成功</p>
+            <h2>QRコードのデータを取得しました</h2>
+          </div>
+
+          <ul class="check-list" aria-live="polite" aria-label="確認状況">
+            <li class="check-item" data-check="0">
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>リンク形式</span>
+              <span class="check-state">待機中</span>
+            </li>
+            <li class="check-item" data-check="1">
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>接続先</span>
+              <span class="check-state">待機中</span>
+            </li>
+            <li class="check-item" data-check="2">
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>コピー機の機嫌</span>
+              <span class="check-state">待機中</span>
+            </li>
+            <li class="check-item" data-check="3">
+              <span class="check-icon" aria-hidden="true">✓</span>
+              <span>本日の会議終了時刻</span>
+              <span class="check-state">待機中</span>
+            </li>
+          </ul>
+
+          <div class="progress-track" aria-hidden="true">
+            <div class="progress-bar" id="progressBar"></div>
+          </div>
+
+          <button class="primary-button" id="startButton" type="button">読み取り結果を確認する</button>
+          <p class="system-note" id="systemNote">ボタンを押すと、接続先を確認します。</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="portal-message" id="portalMessage" aria-live="polite">
+      <p>接続先を発見しました<br>「QRの向こうの職員室」</p>
+    </div>
+
+    <section class="screen staff-screen" id="staffScreen" aria-labelledby="staffTitle" aria-hidden="true">
+      <img class="staff-photo" src="assets/animal-staffroom.png" alt="クマ、ウサギ、キツネ、ペンギン、カピバラの先生たちが、夕方の職員室で仕事をしたりお茶を飲んだりしているイラスト">
+      <div class="staff-shade" aria-hidden="true"></div>
+
+      <div class="staff-content">
+        <div class="fortune-panel">
+          <div class="staff-brand">
+            <strong>QRキャッチ</strong>
+            <span>presented By H.M Works</span>
+          </div>
+
+          <p class="eyebrow">接続先</p>
+          <h2 class="staff-title" id="staffTitle">QRの向こうの職員室</h2>
+
+          <div class="draw-area">
+            <div class="draw-status" id="drawStatus" aria-live="polite">
+              <p class="draw-label" id="drawLabel">先生方の本日の校務データを集計しています…</p>
+              <div class="shuffle-track" aria-hidden="true"></div>
+            </div>
+
+            <article class="fortune-result" id="fortuneResult" aria-live="polite">
+              <p class="fortune-kicker">本日の職員室おみくじ</p>
+              <h3 class="fortune-title" id="fortuneTitle"></h3>
+              <p class="fortune-copy" id="fortuneCopy"></p>
+              <p class="lucky-item" id="luckyItem"></p>
+            </article>
+          </div>
+
+          <p class="motto" id="motto">清く　明るく　大らかに</p>
+
+          <div class="actions" id="actions">
+            <button class="secondary-button" id="retryButton" type="button">もう一度のぞく</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <button class="skip-button" id="skipButton" type="button">演出をスキップ</button>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const fortunes = [
+        {
+          title: "印刷大吉",
+          copy: "今日はコピー機が、あなたに少しだけ優しいでしょう。",
+          lucky: "ラッキーアイテム：残量の多い赤ペン"
+        },
+        {
+          title: "提出物吉",
+          copy: "名前の書かれた提出物が、いつもより多く集まる予感です。",
+          lucky: "ラッキー行動：最初に名前を書くよう伝える"
+        },
+        {
+          title: "会議すっきり吉",
+          copy: "誰かの『では、要点だけ』が職員室をそっと救うでしょう。",
+          lucky: "ラッキーアイテム：一枚にまとまった資料"
+        },
+        {
+          title: "給食ほくほく吉",
+          copy: "好きなメニューの日に、おかわりが少し残るかもしれません。",
+          lucky: "ラッキー席：配膳台の近く"
+        },
+        {
+          title: "赤ペン快調吉",
+          copy: "採点中の赤ペンが、最後の一枚までかすれず走り切ります。",
+          lucky: "ラッキー予備：引き出しの奥の一本"
+        },
+        {
+          title: "時間ぴったり吉",
+          copy: "チャイムと説明の終わりが、奇跡的に重なるでしょう。",
+          lucky: "ラッキーひと言：続きは次の時間に"
+        },
+        {
+          title: "机上発掘吉",
+          copy: "探していた書類は、新しい書類の下から見つかりそうです。",
+          lucky: "ラッキー場所：右から三番目の山"
+        },
+        {
+          title: "連絡すいすい吉",
+          copy: "伝えたかったことを、忘れる前に伝えられるでしょう。",
+          lucky: "ラッキーアイテム：少し大きめの付箋"
+        },
+        {
+          title: "ひらめき吉",
+          copy: "授業のアイデアは、別の仕事をしている時に降りてきます。",
+          lucky: "ラッキー行動：忘れる前に三行だけメモ"
+        },
+        {
+          title: "お茶うま吉",
+          copy: "今日の飲み物は、忘れずに温かいうちに飲めそうです。",
+          lucky: "ラッキータイム：ほんの五分のひと休み"
+        },
+        {
+          title: "ほっこり吉",
+          copy: "何気なくかけた一言が、誰かを少し元気にします。",
+          lucky: "ラッキー行動：目が合ったら、にっこり"
+        },
+        {
+          title: "ぼちぼち吉",
+          copy: "全部終わらなくても大丈夫。今日の分だけ、ちゃんと進みます。",
+          lucky: "ラッキー合言葉：まあ、ぼちぼち"
+        }
+      ];
+
+      const rareFortune = {
+        title: "伝説の定時退勤大吉",
+        copy: "本日は『帰ろうとした瞬間の追加案件』を回避できるかもしれません。",
+        lucky: "※効果には個人差と校務分掌差があります。"
+      };
+
+      const app = document.getElementById("app");
+      const startButton = document.getElementById("startButton");
+      const retryButton = document.getElementById("retryButton");
+      const skipButton = document.getElementById("skipButton");
+      const progressBar = document.getElementById("progressBar");
+      const systemNote = document.getElementById("systemNote");
+      const staffScreen = document.getElementById("staffScreen");
+      const drawStatus = document.getElementById("drawStatus");
+      const drawLabel = document.getElementById("drawLabel");
+      const fortuneResult = document.getElementById("fortuneResult");
+      const fortuneTitle = document.getElementById("fortuneTitle");
+      const fortuneCopy = document.getElementById("fortuneCopy");
+      const luckyItem = document.getElementById("luckyItem");
+      const motto = document.getElementById("motto");
+      const actions = document.getElementById("actions");
+      const checks = [...document.querySelectorAll(".check-item")];
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      let timers = [];
+      let running = false;
+      let selectedFortune = null;
+
+      function later(callback, delay) {
+        const adjustedDelay = reducedMotion ? Math.min(delay * .12, 500) : delay;
+        const timer = window.setTimeout(callback, adjustedDelay);
+        timers.push(timer);
+      }
+
+      function clearTimers() {
+        timers.forEach(window.clearTimeout);
+        timers = [];
+      }
+
+      function setCheck(index, state, label) {
+        const item = checks[index];
+        item.classList.remove("active", "done", "strange");
+        item.classList.add(state);
+        item.querySelector(".check-state").textContent = label;
+      }
+
+      function pickFortune() {
+        if (Math.random() < .05) {
+          return rareFortune;
+        }
+        return fortunes[Math.floor(Math.random() * fortunes.length)];
+      }
+
+      function prepareFortune() {
+        selectedFortune = pickFortune();
+        fortuneTitle.textContent = selectedFortune.title;
+        fortuneCopy.textContent = selectedFortune.copy;
+        luckyItem.textContent = selectedFortune.lucky;
+      }
+
+      function showStaffRoom() {
+        app.classList.add("staff-mode");
+        app.classList.remove("portal-opening");
+        staffScreen.setAttribute("aria-hidden", "false");
+        skipButton.textContent = "結果を見る";
+        drawLabel.textContent = "先生方の本日の校務データを集計しています…";
+      }
+
+      function revealFortune() {
+        if (!selectedFortune) {
+          prepareFortune();
+        }
+        drawStatus.classList.add("is-hidden");
+        fortuneResult.classList.add("is-visible");
+        fortuneResult.focus?.({ preventScroll: true });
+      }
+
+      function completeExperience() {
+        if (!app.classList.contains("staff-mode")) {
+          showStaffRoom();
+        }
+        revealFortune();
+        motto.classList.add("is-visible");
+        actions.classList.add("is-visible");
+        skipButton.classList.remove("is-visible");
+        running = false;
+      }
+
+      function runExperience() {
+        if (running) return;
+        running = true;
+        clearTimers();
+        prepareFortune();
+        startButton.disabled = true;
+        startButton.textContent = "確認しています…";
+        skipButton.classList.add("is-visible");
+        systemNote.textContent = "取得したデータを確認しています。";
+        progressBar.style.width = "10%";
+
+        setCheck(0, "active", "確認中");
+        later(() => {
+          setCheck(0, "done", "正常");
+          setCheck(1, "active", "確認中");
+          progressBar.style.width = "34%";
+        }, 1500);
+
+        later(() => {
+          setCheck(1, "done", "安全なページ");
+          setCheck(2, "active", "確認中");
+          progressBar.style.width = "58%";
+        }, 3400);
+
+        later(() => {
+          setCheck(2, "strange", "今日はたぶん良好");
+          setCheck(3, "active", "予測中");
+          systemNote.textContent = "通常とは異なるデータが含まれています。";
+          progressBar.style.width = "78%";
+        }, 5500);
+
+        later(() => {
+          setCheck(3, "strange", "予測不能");
+          systemNote.textContent = "別の判定方法を試します…";
+          progressBar.style.width = "100%";
+        }, 7600);
+
+        later(() => {
+          app.classList.add("portal-opening");
+        }, 9200);
+
+        later(showStaffRoom, 10600);
+
+        later(() => {
+          drawLabel.textContent = "コピー機運・会議運・赤ペン運を照合中…";
+        }, 13100);
+
+        later(() => {
+          drawLabel.textContent = "判定不能。おみくじに切り替えます。";
+        }, 15900);
+
+        later(revealFortune, 19000);
+        later(() => motto.classList.add("is-visible"), 22500);
+        later(() => {
+          actions.classList.add("is-visible");
+          skipButton.classList.remove("is-visible");
+          running = false;
+        }, 25800);
+      }
+
+      function resetExperience() {
+        clearTimers();
+        running = false;
+        selectedFortune = null;
+        app.classList.remove("portal-opening", "staff-mode");
+        staffScreen.setAttribute("aria-hidden", "true");
+        startButton.disabled = false;
+        startButton.textContent = "読み取り結果を確認する";
+        systemNote.textContent = "ボタンを押すと、接続先を確認します。";
+        progressBar.style.width = "0";
+        checks.forEach((item) => {
+          item.classList.remove("active", "done", "strange");
+          item.querySelector(".check-state").textContent = "待機中";
+        });
+        drawStatus.classList.remove("is-hidden");
+        fortuneResult.classList.remove("is-visible");
+        motto.classList.remove("is-visible");
+        actions.classList.remove("is-visible");
+        skipButton.classList.remove("is-visible");
+        skipButton.textContent = "演出をスキップ";
+        window.scrollTo({ top: 0, behavior: "instant" });
+      }
+
+      startButton.addEventListener("click", runExperience);
+      retryButton.addEventListener("click", () => {
+        resetExperience();
+        window.setTimeout(runExperience, reducedMotion ? 20 : 350);
+      });
+      skipButton.addEventListener("click", () => {
+        clearTimers();
+        completeExperience();
+      });
+    })();
+  </script>
+</body>
+</html>
